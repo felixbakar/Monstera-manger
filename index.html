@@ -1,105 +1,293 @@
 <!doctype html>
-<html lang="sv">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#2f6b3b">
-<title>Monstera Manager</title>
+<!DOCTYPE html>
 
-<link rel="stylesheet" href="css/style.css">
-<link rel="stylesheet" href="css/components.css">
-<link rel="stylesheet" href="css/responsive.css">
+<html lang="sv">
+<head><meta content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" name="viewport"/>
+<meta charset="utf-8"/><meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/>
+<meta content="#315c3b" name="theme-color"/><title>Monstera Manager</title>
+<link href="css/style.css" rel="stylesheet"/>
+<link href="css/components.css" rel="stylesheet"/>
+<link href="css/responsive.css" rel="stylesheet"/>
+<link id="appIcon" rel="apple-touch-icon"/>
 </head>
 
 <body>
 
-<header>
-  <div>
-    <small>VÄXTREGISTER</small>
-    <h1>Monstera Manager</h1>
-  </div>
+<div class="app">
 
-  <button id="toolsBtn">•••</button>
+<header class="header">
+  <div class="brand">
+    <div class="brandIcon">🌿</div>
+    <div>
+      <h1>Monstera Manager</h1>
+      <p>Mitt växtregister</p>
+    </div>
+  </div>
 </header>
 
 <main>
 
-<section class="card">
-  <small>DITT REGISTER</small>
-  <h2>Mina plantor</h2>
+<section id="home">
 
   <div class="stats">
-    <div>
-      🌱
+    <div class="stat">
+      <small>🌱 Plantor</small>
       <b id="plantCount">0</b>
-      <small>Plantor</small>
     </div>
 
-    <div>
-      📸
+    <div class="stat">
+      <small>📸 Bilder</small>
       <b id="imageCount">0</b>
-      <small>Bilder</small>
-    </div>
-
-    <div>
-      ⭐
-      <b id="favoriteCount">0</b>
-      <small>Favoriter</small>
     </div>
   </div>
+
+  <div id="projectDashboard"></div>
+  <div id="reminderSummary"></div>
+
+  <h2 class="section">Mina plantor</h2>
+
+  <div id="plants" class="list"></div>
+
+  <button class="primary" onclick="openAddPlantSheet()">
+    ➕ Lägg till planta
+  </button>
+
 </section>
 
-<div class="toolbar">
-  <input
-    id="plantSearch"
-    placeholder="🔎 Sök på namn eller ID..."
-  >
 
-  <select id="plantFilter">
-    <option value="all">☷ Alla plantor</option>
-    <option value="favorites">⭐ Favoriter</option>
-    <option value="documented">📸 Dokumenterade</option>
-    <option value="never">🌱 Ej dokumenterade</option>
-    <option value="archived">📦 Arkiverade</option>
-  </select>
-</div>
+<section id="detail" class="detail">
 
-<button class="primary" id="addPlantBtn">
-  ＋ Lägg till planta
-</button>
+  <button class="back" onclick="goHome()">
+    ← Tillbaka
+  </button>
 
-<section id="plants"></section>
+  <div id="detailContent"></div>
 
-<section id="statsArea"></section>
+  <div id="statsArea"></div>
 
-<section id="projectDashboard"></section>
+</section>
 
 </main>
 
-<input
-  id="photoInput"
-  hidden
-  type="file"
-  accept="image/*"
-  capture="environment"
->
+</div>
+
+
+<!-- ADD PLANT -->
+
+<div id="addPlantSheet" class="modalBg">
+
+  <div class="modal">
+
+    <div class="modalHead">
+      <h2>🌱 Lägg till planta</h2>
+      <button class="close" onclick="closeAddPlantSheet()">×</button>
+    </div>
+
+    <form id="addPlantForm" onsubmit="return MM_submitAddPlant(event)">
+
+      <div class="field">
+        <label>Kategori</label>
+        <select id="mmAddCategory">
+        </select>
+      </div>
+
+      <div id="mmMonsteraVariantWrap" class="field">
+        <label>Monstera-variant</label>
+        <select id="mmAddVariant"></select>
+      </div>
+
+      <div class="field">
+        <label>Namn</label>
+        <input id="mmAddName" type="text" autocomplete="off"/>
+      </div>
+
+      <div class="cuttings-box">
+
+        <label class="cutting-toggle">
+          <input id="mmAddCutting" type="checkbox"/>
+          <span>Det här är en stickling</span>
+        </label>
+
+        <div id="mmMotherWrap" class="mother-wrap">
+
+          <label class="field">
+            <span>Moderplanta</span>
+            <select id="mmMotherPlant"></select>
+          </label>
+
+          <div class="mother-help">
+            Välj vilken planta sticklingen kommer från.
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="field">
+        <label>Ursprungsdatum</label>
+        <input id="mmAddOrigin" type="date"/>
+      </div>
+
+
+      <div class="field">
+        <label>Inköpsdatum</label>
+        <input id="mmAddPurchase" type="date"/>
+      </div>
+
+
+      <div id="mmCustomCategoryWrap" class="customCategory">
+
+        <input
+          id="mmCustomCategory"
+          type="text"
+          placeholder="Exempel: Begonior"
+        />
+
+        <div class="customCategoryHelp">
+          Skriv namnet på din nya kategori.
+        </div>
+
+      </div>
+
+
+      <button class="primary" type="submit">
+        Lägg till planta
+      </button>
+
+    </form>
+
+  </div>
+
+</div>
+
+
+<!-- PLANT MODAL -->
+
+<div id="plantModal" class="modalBg">
+
+  <div class="modal">
+
+    <div class="modalHead">
+      <h2>🌱 Planta</h2>
+      <button class="close" onclick="closePlantForm()">×</button>
+    </div>
+
+    <form id="plantForm">
+
+      <div class="field">
+        <label>Namn</label>
+        <input id="pName" type="text"/>
+      </div>
+
+      <div class="field">
+        <label>Kategori</label>
+        <select id="pCategory"></select>
+      </div>
+
+      <div id="customCategoryWrap" class="customCategory">
+
+        <input
+          id="pCustomCategory"
+          type="text"
+          placeholder="Egen kategori"
+        />
+
+        <div class="customCategoryHelp">
+          Skriv namnet på den egna kategorin.
+        </div>
+
+      </div>
+
+      <div class="field">
+        <label>Ursprungsdatum</label>
+        <input id="pOrigin" type="date"/>
+      </div>
+
+      <div class="field">
+        <label>Inköpsdatum</label>
+        <input id="pPurchase" type="date"/>
+      </div>
+
+      <div class="field">
+        <label>Beskrivning</label>
+        <textarea id="pDesc"></textarea>
+      </div>
+
+      <div class="cuttings-box">
+
+        <label class="cutting-toggle">
+          <input id="isCutting" type="checkbox"/>
+          <span>Det här är en stickling</span>
+        </label>
+
+        <div id="motherWrap" class="mother-wrap">
+
+          <label class="field">
+            <span>Moderplanta</span>
+            <select id="pMother"></select>
+          </label>
+
+          <div class="mother-help">
+            Välj vilken planta sticklingen kommer från.
+          </div>
+
+        </div>
+
+      </div>
+
+      <button class="primary" type="submit">
+        Spara
+      </button>
+
+    </form>
+
+  </div>
+
+</div>
+
+
+<!-- CAMERA -->
+
+<div id="mmCamera" class="modalBg">
+
+  <div class="modal">
+
+    <div class="modalHead">
+      <h2>📷 Kamera</h2>
+      <button class="close" onclick="closeCamera()">×</button>
+    </div>
+
+    <video
+      id="mmVideo"
+      autoplay
+      playsinline
+      style="width:100%;border-radius:18px"
+    ></video>
+
+    <button class="primary" onclick="captureCameraPhoto()">
+      📸 Ta bild
+    </button>
+
+  </div>
+
+</div>
+
 
 <input
   id="backupInput"
-  hidden
   type="file"
   accept=".json,application/json"
->
+  style="display:none"
+/>
 
-<div id="modalRoot"></div>
 
-<script src="js/database.js"></script>
+<script src="js/app.js"></script>
+<script src="js/backup.js"></script>
+<script src="js/camera.js"></script>
 <script src="js/plants.js"></script>
 <script src="js/ui.js"></script>
-<script src="js/modals.js"></script>
-<script src="js/backup.js"></script>
 <script src="js/diagnostics.js"></script>
-<script src="js/app.js"></script>
 
 </body>
 </html>
