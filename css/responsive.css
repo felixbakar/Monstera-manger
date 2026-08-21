@@ -1,1 +1,25 @@
-h
+@media(max-width:600px){
+
+  .toolbar{
+    grid-template-columns:1fr
+  }
+
+  .modal{
+    padding-bottom:calc(18px + env(safe-area-inset-bottom))
+  }
+
+}
+
+@media(min-width:700px){
+
+  .modalBg{
+    align-items:center;
+    padding:24px
+  }
+
+  .modal{
+    max-width:650px;
+    border-radius:26px
+  }
+
+}
