@@ -1,1 +1,105 @@
-h
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2f6b3b">
+<title>Monstera Manager</title>
+
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/responsive.css">
+</head>
+
+<body>
+
+<header>
+  <div>
+    <small>VÄXTREGISTER</small>
+    <h1>Monstera Manager</h1>
+  </div>
+
+  <button id="toolsBtn">•••</button>
+</header>
+
+<main>
+
+<section class="card">
+  <small>DITT REGISTER</small>
+  <h2>Mina plantor</h2>
+
+  <div class="stats">
+    <div>
+      🌱
+      <b id="plantCount">0</b>
+      <small>Plantor</small>
+    </div>
+
+    <div>
+      📸
+      <b id="imageCount">0</b>
+      <small>Bilder</small>
+    </div>
+
+    <div>
+      ⭐
+      <b id="favoriteCount">0</b>
+      <small>Favoriter</small>
+    </div>
+  </div>
+</section>
+
+<div class="toolbar">
+  <input
+    id="plantSearch"
+    placeholder="🔎 Sök på namn eller ID..."
+  >
+
+  <select id="plantFilter">
+    <option value="all">☷ Alla plantor</option>
+    <option value="favorites">⭐ Favoriter</option>
+    <option value="documented">📸 Dokumenterade</option>
+    <option value="never">🌱 Ej dokumenterade</option>
+    <option value="archived">📦 Arkiverade</option>
+  </select>
+</div>
+
+<button class="primary" id="addPlantBtn">
+  ＋ Lägg till planta
+</button>
+
+<section id="plants"></section>
+
+<section id="statsArea"></section>
+
+<section id="projectDashboard"></section>
+
+</main>
+
+<input
+  id="photoInput"
+  hidden
+  type="file"
+  accept="image/*"
+  capture="environment"
+>
+
+<input
+  id="backupInput"
+  hidden
+  type="file"
+  accept=".json,application/json"
+>
+
+<div id="modalRoot"></div>
+
+<script src="js/database.js"></script>
+<script src="js/plants.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/modals.js"></script>
+<script src="js/backup.js"></script>
+<script src="js/diagnostics.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
