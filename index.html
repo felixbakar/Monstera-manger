@@ -5,281 +5,1084 @@
 <head><meta content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" name="viewport"/>
 <meta charset="utf-8"/><meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/>
 <meta content="#315c3b" name="theme-color"/><title>Monstera Manager</title>
+
+<meta content="#234d2d" name="theme-color"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="Monstera Manager" name="apple-mobile-web-app-title"/>
+<link id="appIcon" rel="apple-touch-icon"/>
+
 <link href="css/style.css" rel="stylesheet"/>
 <link href="css/components.css" rel="stylesheet"/>
 <link href="css/responsive.css" rel="stylesheet"/>
-<link id="appIcon" rel="apple-touch-icon"/>
 </head>
 
 <body>
 
 <div class="app">
 
-<header class="header">
-  <div class="brand">
-    <div class="brandIcon">🌿</div>
-    <div>
-      <h1>Monstera Manager</h1>
-      <p>Mitt växtregister</p>
-    </div>
-  </div>
-</header>
-
-<main>
-
 <section id="home">
 
-  <div class="stats">
-    <div class="stat">
-      <small>🌱 Plantor</small>
-      <b id="plantCount">0</b>
-    </div>
+<div class="mm-homeHero">
 
-    <div class="stat">
-      <small>📸 Bilder</small>
-      <b id="imageCount">0</b>
-    </div>
-  </div>
+<div class="mm-heroTop">
+<div class="mm-brandMark">🌿</div>
+<div class="mm-heroEyebrow">MONSTERA MANAGER</div>
+</div>
 
-  <div id="projectDashboard"></div>
-  <div id="reminderSummary"></div>
+<div class="mm-heroTitle">Din växtsamling</div>
 
-  <h2 class="section">Mina plantor</h2>
+<div class="mm-heroSub">
+Dokumentera <span>•</span> följ <span>•</span> jämför <span>•</span> väx
+</div>
 
-  <div id="plants" class="list"></div>
+<div class="mm-heroFooter">
+<div><b id="plantCount">0</b><span>plantor</span></div>
+<div class="mm-heroDivider"></div>
+<div><b id="imageCount">0</b><span>bilder</span></div>
+</div>
 
-  <button class="primary" onclick="openAddPlantSheet()">
-    ➕ Lägg till planta
-  </button>
+</div>
+
+
+<div class="stats mm-dashboardStats" id="projectDashboard"></div>
+
+
+<div class="mm-searchPanel" id="searchCard">
+
+<div class="mm-searchHead">
+
+<div>
+<div class="mm-searchTitle">Hitta en planta</div>
+<div class="mm-searchSub">Sök eller filtrera ditt register</div>
+</div>
+
+<div class="mm-searchIcon">⌕</div>
+
+</div>
+
+
+<div class="mm-searchInputWrap">
+
+<span>🔎</span>
+
+<input
+autocomplete="off"
+id="plantSearch"
+placeholder="Sök på namn eller ID..."
+/>
+
+</div>
+
+
+<div class="mm-filterWrap">
+
+<span>☷</span>
+
+<select id="plantFilter">
+
+<option value="all">Alla plantor</option>
+<option value="documented">Har dokumentation</option>
+<option value="never">Ingen dokumentation</option>
+<option value="sold">Har försäljning</option>
+<option value="reminder">Påminnelse aktiv</option>
+<option value="node">🌱 Nod</option>
+<option value="rooting">🌿 Rotar</option>
+<option value="growing">🍃 Växer</option>
+<option value="established">🪴 Etablerad</option>
+<option value="forsale">💰 Till salu</option>
+<option value="sold">✅ Såld</option>
+
+</select>
+
+</div>
+
+</div>
+
+
+<div id="reminderSummary"></div>
+
+
+<div class="mm-sectionIntro">
+
+<div>
+
+<div class="mm-sectionEyebrow">DITT REGISTER</div>
+
+<h2 class="section">Mina plantor</h2>
+
+</div>
+
+<div class="mm-sectionHint">
+Svep för att bläddra
+</div>
+
+</div>
+
+
+<div class="list" id="plants"></div>
+
+
+<button class="primary" onclick="openAddPlantSheet()">
+＋ Lägg till planta
+</button>
+
+
+<div class="mm-toolsArea">
+
+<button
+class="mm-toolsLauncher"
+onclick="openToolsModal()"
+>
+
+<span class="mm-toolsIcon">•••</span>
+
+<span class="mm-toolsText">
+<b>Mer</b>
+<small>Verktyg, backup &amp; diagnostik</small>
+</span>
+
+<span class="mm-toolsArrow">›</span>
+
+</button>
+
+</div>
 
 </section>
 
 
-<section id="detail" class="detail">
+<section class="detail" id="detail">
 
-  <button class="back" onclick="goHome()">
-    ← Tillbaka
-  </button>
+<button class="back" onclick="goHome()">
+← Mina plantor
+</button>
 
-  <div id="detailContent"></div>
-
-  <div id="statsArea"></div>
+<div id="detailContent"></div>
 
 </section>
 
-</main>
+</div>
+
+
+<div
+class="modalBg"
+id="toolsModal"
+onclick="if(event.target===this) closeToolsModal()"
+>
+
+<div class="modal mm-toolsModal">
+
+<div class="modalHead">
+
+<div>
+
+<div class="mm-toolsKicker">
+APPVERKTYG
+</div>
+
+<h2>Verktyg &amp; data</h2>
+
+</div>
+
+<button
+class="close"
+onclick="closeToolsModal()"
+>
+×
+</button>
 
 </div>
 
 
-<!-- ADD PLANT -->
+<div class="mm-toolsIntro">
 
-<div id="addPlantSheet" class="modalBg">
+<div class="mm-toolsIntroIcon">
+⚙️
+</div>
 
-  <div class="modal">
+<div>
 
-    <div class="modalHead">
-      <h2>🌱 Lägg till planta</h2>
-      <button class="close" onclick="closeAddPlantSheet()">×</button>
-    </div>
+<b>Allt på ett ställe</b>
 
-    <form id="addPlantForm" onsubmit="return MM_submitAddPlant(event)">
+<span>
+Här finns funktioner som du inte behöver använda varje gång du öppnar appen.
+</span>
 
-      <div class="field">
-        <label>Kategori</label>
-        <select id="mmAddCategory">
-        </select>
-      </div>
-
-      <div id="mmMonsteraVariantWrap" class="field">
-        <label>Monstera-variant</label>
-        <select id="mmAddVariant"></select>
-      </div>
-
-      <div class="field">
-        <label>Namn</label>
-        <input id="mmAddName" type="text" autocomplete="off"/>
-      </div>
-
-      <div class="cuttings-box">
-
-        <label class="cutting-toggle">
-          <input id="mmAddCutting" type="checkbox"/>
-          <span>Det här är en stickling</span>
-        </label>
-
-        <div id="mmMotherWrap" class="mother-wrap">
-
-          <label class="field">
-            <span>Moderplanta</span>
-            <select id="mmMotherPlant"></select>
-          </label>
-
-          <div class="mother-help">
-            Välj vilken planta sticklingen kommer från.
-          </div>
-
-        </div>
-
-      </div>
-
-
-      <div class="field">
-        <label>Ursprungsdatum</label>
-        <input id="mmAddOrigin" type="date"/>
-      </div>
-
-
-      <div class="field">
-        <label>Inköpsdatum</label>
-        <input id="mmAddPurchase" type="date"/>
-      </div>
-
-
-      <div id="mmCustomCategoryWrap" class="customCategory">
-
-        <input
-          id="mmCustomCategory"
-          type="text"
-          placeholder="Exempel: Begonior"
-        />
-
-        <div class="customCategoryHelp">
-          Skriv namnet på din nya kategori.
-        </div>
-
-      </div>
-
-
-      <button class="primary" type="submit">
-        Lägg till planta
-      </button>
-
-    </form>
-
-  </div>
+</div>
 
 </div>
 
 
-<!-- PLANT MODAL -->
+<div class="mm-toolsSection">
+Projekt
+</div>
 
-<div id="plantModal" class="modalBg">
 
-  <div class="modal">
+<button
+class="mm-toolBtn"
+onclick="closeToolsModal();showProjectAnalysis()"
+>
 
-    <div class="modalHead">
-      <h2>🌱 Planta</h2>
-      <button class="close" onclick="closePlantForm()">×</button>
-    </div>
+<span class="mm-toolIcon">📊</span>
 
-    <form id="plantForm">
+<span>
+<b>Projektanalys</b>
+<small>Statistik och sammanställning</small>
+</span>
 
-      <div class="field">
-        <label>Namn</label>
-        <input id="pName" type="text"/>
-      </div>
+<i>›</i>
 
-      <div class="field">
-        <label>Kategori</label>
-        <select id="pCategory"></select>
-      </div>
+</button>
 
-      <div id="customCategoryWrap" class="customCategory">
 
-        <input
-          id="pCustomCategory"
-          type="text"
-          placeholder="Egen kategori"
-        />
+<div class="mm-toolsSection">
+App &amp; backup
+</div>
 
-        <div class="customCategoryHelp">
-          Skriv namnet på den egna kategorin.
-        </div>
 
-      </div>
+<div class="mm-installCard">
 
-      <div class="field">
-        <label>Ursprungsdatum</label>
-        <input id="pOrigin" type="date"/>
-      </div>
+<div class="mm-installIcon">
+📱
+</div>
 
-      <div class="field">
-        <label>Inköpsdatum</label>
-        <input id="pPurchase" type="date"/>
-      </div>
-
-      <div class="field">
-        <label>Beskrivning</label>
-        <textarea id="pDesc"></textarea>
-      </div>
-
-      <div class="cuttings-box">
-
-        <label class="cutting-toggle">
-          <input id="isCutting" type="checkbox"/>
-          <span>Det här är en stickling</span>
-        </label>
-
-        <div id="motherWrap" class="mother-wrap">
-
-          <label class="field">
-            <span>Moderplanta</span>
-            <select id="pMother"></select>
-          </label>
-
-          <div class="mother-help">
-            Välj vilken planta sticklingen kommer från.
-          </div>
-
-        </div>
-
-      </div>
-
-      <button class="primary" type="submit">
-        Spara
-      </button>
-
-    </form>
-
-  </div>
+<div>
+<b>Installera som app</b>
+<p>
+Öppna sidan i Safari → Dela → Lägg till på hemskärmen.
+</p>
+</div>
 
 </div>
 
 
-<!-- CAMERA -->
+<button
+class="mm-toolBtn"
+onclick="exportBackup()"
+>
 
-<div id="mmCamera" class="modalBg">
+<span class="mm-toolIcon">📤</span>
 
-  <div class="modal">
+<span>
+<b>Exportera backup</b>
+<small>Spara en kopia av dina data</small>
+</span>
 
-    <div class="modalHead">
-      <h2>📷 Kamera</h2>
-      <button class="close" onclick="closeCamera()">×</button>
-    </div>
+<i>›</i>
 
-    <video
-      id="mmVideo"
-      autoplay
-      playsinline
-      style="width:100%;border-radius:18px"
-    ></video>
+</button>
 
-    <button class="primary" onclick="captureCameraPhoto()">
-      📸 Ta bild
-    </button>
 
-  </div>
+<button
+class="mm-toolBtn"
+onclick="document.getElementById('backupInput').click()"
+>
+
+<span class="mm-toolIcon">📥</span>
+
+<span>
+<b>Importera backup</b>
+<small>Återställ från en sparad fil</small>
+</span>
+
+<i>›</i>
+
+</button>
+
+
+<button
+class="mm-toolBtn"
+onclick="verifyBackupFile()"
+>
+
+<span class="mm-toolIcon">🔎</span>
+
+<span>
+<b>Verifiera backup</b>
+<small>Kontrollera att filen är giltig</small>
+</span>
+
+<i>›</i>
+
+</button>
+
+
+<button
+class="mm-toolBtn"
+onclick="runLegacyBackupCompatibilityTest()"
+>
+
+<span class="mm-toolIcon">🕰️</span>
+
+<span>
+<b>Testa äldre backup</b>
+<small>Kontrollera bakåtkompatibilitet</small>
+</span>
+
+<i>›</i>
+
+</button>
+
+
+<button
+class="mm-toolBtn"
+onclick="runBackupIntegrityTest()"
+>
+
+<span class="mm-toolIcon">🧪</span>
+
+<span>
+<b>Testa backup / återställning</b>
+<small>Säkerhetstest av återställningen</small>
+</span>
+
+<i>›</i>
+
+</button>
+
+
+<div class="mm-toolsSection">
+Diagnostik
+</div>
+
+
+<div
+class="mm-diagnostic mm-diagnostic-inside"
+id="mmDiagnostic"
+>
+
+<div class="mm-diagnostic-head">
+
+<div>
+
+<span class="mm-diagnostic-title">
+🩺 Diagnos
+</span>
+
+<div class="mm-diagnostic-sub">
+Kontrollera att appens funktioner och data fungerar som de ska.
+</div>
+
+</div>
+
+<span
+class="mm-diagnostic-summary"
+id="mmDiagSummary"
+>
+Redo
+</span>
+
+</div>
+
+
+<div
+class="mm-diagnostic-body"
+id="mmDiagBody"
+>
+
+<div class="mm-diag-row">
+
+<div class="mm-diag-icon">
+ℹ️
+</div>
+
+<div class="mm-diag-main">
+
+<div class="mm-diag-label">
+Ingen kontroll körd
+</div>
+
+<div class="mm-diag-detail">
+Kör diagnosen när du vill kontrollera appens funktioner. Dina växtdata ändras inte.
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<div class="mm-diagnostic-actions">
+
+<button
+class="mm-diag-btn mm-diag-run"
+onclick="MM_runDiagnostics()"
+type="button"
+>
+🔄 Kör diagnos
+</button>
+
+<button
+class="mm-diag-btn mm-diag-copy"
+id="mmDiagCopy"
+onclick="MM_copyDiagnostics()"
+type="button"
+>
+📋 Kopiera
+</button>
+
+<button
+class="mm-diag-btn mm-diag-copy"
+onclick="MM_repairBrokenImage()"
+type="button"
+>
+🛠️ Reparera bilder
+</button>
+
+</div>
+
+
+<pre
+class="mm-diag-report"
+id="mmDiagReport"
+></pre>
+
+</div>
+
+
+<button
+class="mm-toolsClose"
+onclick="closeToolsModal()"
+>
+Stäng
+</button>
+
+</div>
+
+</div>
+
+
+<div class="modalBg" id="plantModal">
+
+<div class="modal">
+
+<div class="modalHead">
+
+<h2>Ny planta</h2>
+
+<button
+class="close"
+onclick="closePlantForm()"
+>
+×
+</button>
+
+</div>
+
+
+<form id="plantForm">
+
+
+<div class="field">
+
+<label>Namn</label>
+
+<input
+id="pName"
+placeholder="T.ex. Lilla Albo"
+required=""
+/>
+
+</div>
+
+
+<div class="field">
+
+<label>Kategori</label>
+
+<select
+id="pCategory"
+onchange="toggleCustomCategory()"
+>
+
+<option value="Monstera">
+🌿 Monstera
+</option>
+
+<option value="Fikus">
+🌿 Fikus
+</option>
+
+<option value="Övriga">
+🪴 Övriga
+</option>
+
+<option value="__custom__">
+➕ Lägg till egen kategori…
+</option>
+
+</select>
+
+
+<div
+class="customCategory"
+id="customCategoryWrap"
+>
+
+<input
+id="pCustomCategory"
+maxlength="40"
+placeholder="T.ex. Philodendron, Alocasia, Experiment…"
+/>
+
+<div class="customCategoryHelp">
+Skriv namnet på din egen kategori. Den sparas och blir valbar nästa gång.
+</div>
+
+</div>
+
+
+<div class="mother-help">
+Plantorna grupperas automatiskt på startsidan och kan swipas horisontellt inom varje kategori.
+</div>
+
+</div>
+
+
+<div class="field">
+
+<label>Ursprungsdatum</label>
+
+<input
+id="pOrigin"
+required=""
+type="date"
+/>
+
+</div>
+
+
+<div class="field">
+
+<label>Inköpsdatum</label>
+
+<input
+id="pPurchase"
+type="date"
+/>
+
+</div>
+
+
+<div class="cuttings-box">
+
+<label class="cutting-toggle">
+
+<input
+id="isCutting"
+onchange="toggleCuttingFields()"
+type="checkbox"
+/>
+
+<span>
+🌱 Det här är en stickling
+</span>
+
+</label>
+
+
+<div
+class="mother-wrap"
+id="motherWrap"
+>
+
+<div
+class="field"
+style="margin:12px 0 0"
+>
+
+<label>
+Moderplanta
+</label>
+
+<select
+id="pMother"
+required=""
+>
+
+<option value="">
+Välj moderplanta...
+</option>
+
+</select>
+
+<div class="mother-help">
+Välj plantan som sticklingen kommer från. Kopplingen sparas mellan plantorna.
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<div class="field">
+
+<label>
+Beskrivning
+</label>
+
+<textarea
+id="pDesc"
+placeholder="T.ex. Albo-nod, inköpsställe..."
+></textarea>
+
+</div>
+
+
+<button class="save">
+🌱 Spara planta
+</button>
+
+</form>
+
+</div>
 
 </div>
 
 
 <input
-  id="backupInput"
-  type="file"
-  accept=".json,application/json"
-  style="display:none"
+accept="image/*"
+capture="environment"
+class="photoInput"
+id="photoInput"
+type="file"
 />
+
+<input
+accept=".json,application/json"
+class="photoInput"
+id="backupInput"
+type="file"
+/>
+
+
+<div
+class="mm-camera"
+id="mmCamera"
+>
+
+<button
+class="mm-close"
+onclick="closeCamera()"
+>
+×
+</button>
+
+<video
+autoplay=""
+id="mmVideo"
+playsinline=""
+></video>
+
+
+<div
+class="mm-guide"
+id="mmGuide"
+>
+
+<div class="frame"></div>
+
+<div class="line-h top"></div>
+<div class="line-h bottom"></div>
+
+<div class="line-v left"></div>
+<div class="line-v right"></div>
+
+<div class="label">
+🎯 Placera plantan innanför ramen
+</div>
+
+</div>
+
+
+<div class="bar">
+
+<button
+onclick="toggleGuide()"
+style="background:rgba(0,0,0,.55);color:#fff;border:0;border-radius:999px;padding:12px 16px"
+>
+🎯 Guide
+</button>
+
+
+<button
+aria-label="Ta bild"
+class="mm-shutter"
+onclick="takeCameraPhoto()"
+></button>
+
+
+<button
+onclick="flipCamera()"
+style="background:rgba(0,0,0,.55);color:#fff;border:0;border-radius:999px;padding:12px 16px"
+>
+🔄 Kamera
+</button>
+
+</div>
+
+<canvas
+id="mmCanvas"
+style="display:none"
+></canvas>
+
+</div>
+
+
+<div
+class="mm-editor"
+id="mmEditor"
+>
+
+<div
+style="padding:14px;display:flex;justify-content:space-between;align-items:center"
+>
+
+<b>
+📐 Justera bild
+</b>
+
+<button onclick="closeEditor()">
+✕
+</button>
+
+</div>
+
+
+<div class="canvasWrap">
+
+<img id="mmEditImg"/>
+
+</div>
+
+
+<div class="tools">
+
+<button onclick="rotateEdit(-1)">
+↶ 1°
+</button>
+
+<button onclick="rotateEdit(1)">
+↷ 1°
+</button>
+
+<button onclick="rotateEdit(-5)">
+↶ 5°
+</button>
+
+<button onclick="rotateEdit(5)">
+↷ 5°
+</button>
+
+
+<label style="grid-column:1/-1">
+
+🔍 Zoom
+
+<input
+id="mmZoom"
+max="140"
+min="80"
+oninput="applyEdit()"
+type="range"
+value="100"
+/>
+
+</label>
+
+
+<button onclick="resetEdit()">
+Återställ
+</button>
+
+<button onclick="finishEdit()">
+✅ Använd bild
+</button>
+
+</div>
+
+</div>
+
+
+<div
+class="mm-viewer"
+id="mmViewer"
+>
+
+<div class="top">
+
+<b>
+🔎 Bildanalys
+</b>
+
+<button
+onclick="closeViewer()"
+style="background:#0009;color:#fff;border:0;border-radius:50%;width:42px;height:42px;font-size:20px"
+>
+×
+</button>
+
+</div>
+
+
+<img id="mmViewerImg"/>
+
+<div class="hint">
+🤏 Nyp för att zooma · Dra för att flytta
+</div>
+
+</div>
+
+
+<div
+class="mm-lightbox"
+id="mmLightbox"
+onclick="if(event.target===this)closePhotoLarge()"
+>
+
+<button
+class="mm-lightbox-close"
+onclick="closePhotoLarge()"
+>
+×
+</button>
+
+<img
+alt="Stor bild"
+src=""
+/>
+
+<div class="mm-lightbox-info"></div>
+
+</div>
+
+
+<!-- Monstera Manager: Lägg till planta bottom sheet -->
+
+<div
+class="mm-sheetBg"
+id="mmAddPlantSheet"
+onclick="if(event.target===this) closeAddPlantSheet()"
+>
+
+<div
+aria-labelledby="mmAddPlantTitle"
+aria-modal="true"
+class="mm-sheet"
+role="dialog"
+>
+
+<div class="mm-sheetHandle"></div>
+
+
+<div class="mm-sheetHead">
+
+<div>
+
+<div class="mm-sheetKicker">
+NY PLANTA
+</div>
+
+<h2
+class="mm-sheetTitle"
+id="mmAddPlantTitle"
+>
+Lägg till planta
+</h2>
+
+</div>
+
+
+<button
+class="mm-sheetClose"
+onclick="closeAddPlantSheet()"
+type="button"
+>
+×
+</button>
+
+</div>
+
+
+<form
+class="mm-sheetForm"
+id="mmAddPlantForm"
+onsubmit="return MM_submitAddPlant(event)"
+>
+
+
+<div class="mm-sheetField">
+
+<label for="mmAddName">
+Namn
+</label>
+
+<input
+autocomplete="off"
+id="mmAddName"
+placeholder="T.ex. Lilla monstera"
+required=""
+type="text"
+/>
+
+</div>
+
+
+<div class="mm-sheetField">
+
+<label for="mmAddCategory">
+Kategori
+</label>
+
+<select
+id="mmAddCategory"
+onchange="MM_toggleCustomCategory()"
+></select>
+
+
+<div
+class="mm-sheetField"
+id="mmCustomCategoryWrap"
+style="display:none;margin-top:9px"
+>
+
+<label for="mmCustomCategory">
+Egen kategori
+</label>
+
+<input
+id="mmCustomCategory"
+placeholder="T.ex. Philodendron"
+type="text"
+/>
+
+</div>
+
+</div>
+
+
+<div
+class="mm-sheetField"
+id="mmMonsteraVariantWrap"
+style="display:none"
+>
+
+<label for="mmAddVariant">
+Monstera-variant
+</label>
+
+<select id="mmAddVariant"></select>
+
+<div
+class="mm-sheetNote"
+style="margin-top:6px"
+>
+Välj variant så namnger appen plantan automatiskt.
+</div>
+
+</div>
+
+
+<div class="mm-sheetDateGrid">
+
+<div class="mm-sheetField">
+
+<label for="mmAddOrigin">
+Ursprungsdatum
+</label>
+
+<input
+id="mmAddOrigin"
+required=""
+type="date"
+/>
+
+</div>
+
+
+<div class="mm-sheetField">
+
+<label for="mmAddPurchase">
+Inköpsdatum
+</label>
+
+<input
+id="mmAddPurchase"
+type="date"
+/>
+
+</div>
+
+</div>
+
+
+<label class="mm-sheetCheck">
+
+<input
+id="mmAddCutting"
+onchange="MM_toggleMotherPlant()"
+type="checkbox"
+/>
+
+<span>
+
+<b>
+🌱 Stickling
+</b>
+
+<small>
+Markera om plantan kommer från en annan planta.
+</small>
+
+</span>
+
+</label>
+
+
+<div
+class="mm-sheetField"
+id="mmMotherWrap"
+style="display:none"
+>
+
+<label for="mmMotherPlant">
+Moderplanta
+</label>
+
+<select id="mmMotherPlant"></select>
+
+</div>
+
+
+<div class="mm-sheetNote">
+Du kan lägga till mer information om plantan efter att den har skapats.
+</div>
+
+
+<button
+class="mm-sheetPrimary"
+type="submit"
+>
+＋ Skapa planta
+</button>
+
+
+<button
+class="mm-sheetSecondary"
+onclick="closeAddPlantSheet()"
+type="button"
+>
+Avbryt
+</button>
+
+</form>
+
+</div>
+
+</div>
 
 
 <script src="js/app.js"></script>
