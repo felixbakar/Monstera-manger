@@ -1,789 +1,733 @@
-let current=null;
+/* =========================================================
+   MONSTERA MANAGER
+   ui.js
+   Bottom sheets, plantverktyg, navigation och kamera-UI
+   ========================================================= */
 
-async function renderHome(){
+(function () {
 
-  const p=await all(PS);
-  const im=await all(IS);
+  const $ = id =>
+    document.getElementById(id);
 
-  const q=(
-    $("plantSearch").value||""
-  ).toLowerCase();
 
-  const f=$("plantFilter").value;
+  /* -------------------------------------------------------
+     Lägg till planta – bottom sheet
+     ------------------------------------------------------- */
 
-  $("plantCount").textContent=p.length;
+  window.openAddPlantSheet = async function () {
 
-  $("imageCount").textContent=im.length;
+    const sheet =
+      $("mmAddPlantSheet");
 
-  $("favoriteCount").textContent=
-    p.filter(x=>x.favorite).length;
+    if (!sheet) return;
 
-  const a=[];
 
-  for(const x of p){
+    $("mmAddPlantForm")?.reset();
 
-    const pics=await imgs(x.id);
 
-    if(
-      q &&
-      !(
-        (x.name+" "+x.displayId)
-          .toLowerCase()
-          .includes(q)
-      )
-    )
-      continue;
+    const today =
+      new Date()
+        .toISOString()
+        .slice(0, 10);
 
-    if(f==="favorites"&&!x.favorite)
-      continue;
 
-    if(f==="documented"&&!pics.length)
-      continue;
-
-    if(f==="never"&&pics.length)
-      continue;
-
-    if(f==="archived"&&!x.archived)
-      continue;
-
-    a.push({
-      ...x,
-      pics,
-      last:pics.sort(
-        (u,v)=>
-          new Date(v.createdAt)-
-          new Date(u.createdAt)
-      )[0]
-    });
-
-  }
-
-  if(!a.length){
-
-    $("plants").innerHTML=
-      '<div class="card empty">'+
-      'Inga plantor matchar.'+
-      '</div>';
-
-    return;
-
-  }
-
-  const cats=[
-    "Monstera",
-    "Fikus",
-    "Övriga",
-    ...[
-      ...new Set(
-        a.map(x=>x.category)
-      )
-    ].filter(
-      x=>![
-        "Monstera",
-        "Fikus",
-        "Övriga"
-      ].includes(x)
-    )
-  ];
-
-  $("plants").innerHTML=
-    cats.map(c=>{
-
-      const xs=a.filter(
-        x=>x.category===c
-      );
-
-      if(!xs.length)
-        return "";
-
-      return `
-<section class="categoryGroup">
-
-  <div class="categoryHead">
-
-    <div class="categoryTitle">
-      ${
-        c==="Monstera"
-        ?"🌿"
-        :c==="Övriga"
-        ?"🪴"
-        :"🌿"
-      }
-      ${esc(c)}
-    </div>
-
-    <span class="count">
-      ${xs.length}
-      ${xs.length===1?"planta":"plantor"}
-    </span>
-
-  </div>
-
-  ${
-    xs.length>1
-    ?'<div class="hint">Svep åt sidan för att se fler →</div>'
-    :""
-  }
-
-  <div class="plantCarousel">
-
-    ${xs.map(x=>`
-
-<article
-  class="plant"
-  onclick="openDetail('${x.id}')"
->
-
-  <div class="plantIcon">
-
-    ${
-      x.last?.blob
-      ? `<img src="${URL.createObjectURL(x.last.blob)}">`
-      : "🌱"
+    if ($("mmAddOrigin")) {
+      $("mmAddOrigin").value =
+        today;
     }
 
-  </div>
 
-  <div class="plantInfo">
-
-    <h3>${esc(x.name)}</h3>
-
-    <div class="muted">
-      ${esc(x.displayId)}
-      ${x.variant
-        ?" · "+esc(x.variant)
-        :""
-      }
-    </div>
-
-    <div class="muted">
-      🌱 ${age(x.originDate)}
-      · 📸 ${x.pics.length}
-    </div>
-
-    ${
-      x.isCutting
-      ?'<span class="pill">🌱 Stickling</span>'
-      :""
+    if ($("mmAddPurchase")) {
+      $("mmAddPurchase").value =
+        today;
     }
 
-  </div>
 
-  <div class="arrow">
-    ›
-  </div>
+    await MM_prepareAddPlantSheet();
 
-</article>
 
-`).join("")}
+    sheet.style.display =
+      "flex";
 
-  </div>
 
-</section>
-`;
-
-    }).join("");
-
-}
-
-async function renderDashboard(){
-
-  const p=await all(PS);
-
-  const cost=p.reduce(
-    (s,x)=>
-      s+
-      (x.economy?.costs||[])
-        .reduce(
-          (a,y)=>
-            a+Number(y.amount||0),
-          0
-        ),
-    0
-  );
-
-  const sales=p.reduce(
-    (s,x)=>
-      s+
-      (x.economy?.sales||[])
-        .reduce(
-          (a,y)=>
-            a+Number(y.amount||0),
-          0
-        ),
-    0
-  );
-
-  $("projectDashboard").innerHTML=`
-
-<div class="card">
-
-  <h3>📊 Översikt</h3>
-
-  <div class="stats">
-
-    <div>
-      🌱
-      <b>${p.filter(x=>!x.archived).length}</b>
-      <small>Aktiva</small>
-    </div>
-
-    <div>
-      💰
-      <b>${cost.toFixed(0)} kr</b>
-      <small>Investerat</small>
-    </div>
-
-    <div>
-      📈
-      <b>
-        ${
-          sales-cost>=0
-          ?"+"
-          :""
-        }${(sales-cost).toFixed(0)} kr
-      </b>
-      <small>Resultat</small>
-    </div>
-
-  </div>
-
-</div>
-
-`;
-
-}
-
-async function openDetail(id){
-
-  current=id;
-
-  const p=await one(PS,id);
-
-  const pics=(await imgs(id))
-    .sort(
-      (a,b)=>
-        new Date(b.createdAt)-
-        new Date(a.createdAt)
+    requestAnimationFrame(
+      () => {
+        sheet.classList.add(
+          "mm-open"
+        );
+      }
     );
 
-  const m=pics[0]?.measurements||{};
 
-  $("statsArea").innerHTML=`
+    document.body.style.overflow =
+      "hidden";
 
-<div class="card">
 
-  <div>
+    setTimeout(
+      () =>
+        $("mmAddName")?.focus(),
+      280
+    );
 
-    <h2>${esc(p.name)}</h2>
+  };
 
-    <div class="muted">
 
-      ${esc(p.displayId)}
-      ·
-      ${esc(p.category)}
+  window.closeAddPlantSheet =
+    function () {
 
-      ${
-        p.variant
-        ?" · "+esc(p.variant)
-        :""
-      }
+      const sheet =
+        $("mmAddPlantSheet");
 
-    </div>
+      if (!sheet) return;
 
-  </div>
 
-  <div class="infoRow">
-    <span>Ursprungsdatum</span>
-    <b>${fmt(p.originDate)}</b>
-  </div>
+      sheet.classList.remove(
+        "mm-open"
+      );
 
-  <div class="infoRow">
-    <span>Inköpsdatum</span>
-    <b>${fmt(p.purchaseDate)}</b>
-  </div>
 
-  <div class="infoRow">
-    <span>Ålder</span>
-    <b>${age(p.originDate)}</b>
-  </div>
+      setTimeout(
+        () => {
 
-  <div class="measureGrid">
+          sheet.style.display =
+            "none";
 
-    ${
-      [
-        ["📏 Höjd","height","cm"],
-        ["🍃 Blad","leaves","st"],
-        ["🌱 Rötter","roots","st"],
-        ["🤍 Variegering","variegation","%"]
-      ]
-      .map(x=>`
+          document.body.style.overflow =
+            "";
 
-<div class="measure">
+        },
+        220
+      );
 
-  <small>${x[0]}</small>
-
-  <b>
-    ${m[x[1]]??"—"} ${x[2]}
-  </b>
-
-</div>
-
-`)
-      .join("")
-    }
-
-  </div>
-
-  <div class="action-row">
-
-    <button
-      class="small-btn"
-      onclick="addDocumentation('${id}')"
-    >
-      📸 Dokumentera
-    </button>
-
-    <button
-      class="small-btn"
-      onclick="showGrowth('${id}')"
-    >
-      📈 Tillväxt
-    </button>
-
-    <button
-      class="small-btn"
-      onclick="showForecast('${id}')"
-    >
-      🔮 Prognos
-    </button>
-
-    <button
-      class="small-btn"
-      onclick="showRecords('${id}')"
-    >
-      🏆 Rekord
-    </button>
-
-    <button
-      class="small-btn"
-      onclick="showPlantModal(await one(PS,'${id}'))"
-    >
-      ✏️ Redigera
-    </button>
-
-    <button
-      class="small-btn danger"
-      onclick="deletePlant('${id}')"
-    >
-      🗑️ Radera
-    </button>
-
-  </div>
-
-  <h3>
-    📸 Dokumentationer (${pics.length})
-  </h3>
-
-  ${
-    pics.map(x=>`
-
-<div class="infoRow">
-
-  <span>
-    ${
-      new Date(x.createdAt)
-        .toLocaleDateString("sv-SE")
-    }
-  </span>
-
-  <b>
-    ${x.measurements?.height??"—"} cm
-    ·
-    ${x.measurements?.leaves??"—"} blad
-  </b>
-
-</div>
-
-`).join("")
-    ||
-    '<div class="muted">Ingen dokumentation.</div>'
-  }
-
-  <button
-    class="small-btn"
-    style="margin-top:12px"
-    onclick="goHome()"
-  >
-    ← Tillbaka
-  </button>
-
-</div>
-
-`;
-
-  $("statsArea")
-    .scrollIntoView({
-      behavior:"smooth"
-    });
-
-}
-
-function goHome(){
-
-  current=null;
-
-  $("statsArea").innerHTML="";
-
-  renderHome();
-
-  renderDashboard();
-
-  scrollTo({
-    top:0,
-    behavior:"smooth"
-  });
-
-}
-
-async function deletePlant(id){
-
-  if(
-    !confirm(
-      "Radera plantan och dess dokumentation?"
-    )
-  )
-    return;
-
-  for(
-    const x of await imgs(id)
-  )
-    await del(IS,x.id);
-
-  await del(PS,id);
-
-  goHome();
-
-}
-
-function pickImage(){
-
-  return new Promise(r=>{
-
-    const i=$("photoInput");
-
-    i.value="";
-
-    i.onchange=()=>{
-      r(i.files?.[0]||null);
     };
 
-    i.click();
 
-  });
+  /* -------------------------------------------------------
+     Kategori i lägg-till-formuläret
+     ------------------------------------------------------- */
 
-}
+  window.MM_toggleCustomCategory =
+    function () {
 
-async function addDocumentation(id){
+      const select =
+        $("mmAddCategory");
 
-  const f=await pickImage();
+      const customWrap =
+        $("mmCustomCategoryWrap");
 
-  if(!f)
-    return;
+      const variantWrap =
+        $("mmMonsteraVariantWrap");
 
-  showModal(
-    "📸 Dokumentation",
-    `
-<div class="field">
-  <label>Höjd (cm)</label>
-  <input id="mh" type="number" step=".1">
-</div>
 
-<div class="field">
-  <label>Antal blad</label>
-  <input id="ml" type="number">
-</div>
+      if (customWrap) {
 
-<div class="field">
-  <label>Antal rötter</label>
-  <input id="mr" type="number">
-</div>
+        customWrap.style.display =
+          select?.value ===
+          "__custom__"
+            ? "block"
+            : "none";
 
-<div class="field">
-  <label>Variegering (%)</label>
-  <input id="mv" type="number" step=".1">
-</div>
+      }
 
-<div class="field">
-  <label>Anteckning</label>
-  <textarea id="mn"></textarea>
-</div>
 
-<button class="primary" id="saveDoc">
-  💾 Spara
-</button>
-`
+      if (variantWrap) {
+
+        variantWrap.style.display =
+          select?.value ===
+          "Monstera"
+            ? "block"
+            : "none";
+
+      }
+
+
+      if (
+        typeof MM_refreshAutoName ===
+        "function"
+      ) {
+
+        MM_refreshAutoName();
+
+      }
+
+    };
+
+
+  /* -------------------------------------------------------
+     Sticklingfält
+     ------------------------------------------------------- */
+
+  window.MM_toggleMotherPlant =
+    function () {
+
+      const checked =
+        $("mmAddCutting")
+          ?.checked;
+
+
+      const wrap =
+        $("mmMotherWrap");
+
+
+      if (wrap) {
+
+        wrap.style.display =
+          checked
+            ? "block"
+            : "none";
+
+      }
+
+    };
+
+
+  /* -------------------------------------------------------
+     Plantverktyg – bottom sheet
+     ------------------------------------------------------- */
+
+  window.openPlantTools =
+    function () {
+
+      const sheet =
+        $("mmPlantTools");
+
+      if (!sheet) return;
+
+
+      sheet.classList.add(
+        "open"
+      );
+
+
+      sheet.setAttribute(
+        "aria-hidden",
+        "false"
+      );
+
+
+      document.body.style.overflow =
+        "hidden";
+
+    };
+
+
+  window.closePlantTools =
+    function () {
+
+      const sheet =
+        $("mmPlantTools");
+
+      if (!sheet) return;
+
+
+      sheet.classList.remove(
+        "open"
+      );
+
+
+      sheet.setAttribute(
+        "aria-hidden",
+        "true"
+      );
+
+
+      document.body.style.overflow =
+        "";
+
+    };
+
+
+  /* -------------------------------------------------------
+     Guide i kameran
+     ------------------------------------------------------- */
+
+  window.toggleGuide =
+    function () {
+
+      const guide =
+        $("mmGuide");
+
+      if (!guide) return;
+
+
+      guide.style.display =
+        guide.style.display ===
+          "none"
+          ? "flex"
+          : "none";
+
+    };
+
+
+  /* -------------------------------------------------------
+     Kamera
+     ------------------------------------------------------- */
+
+  let mmStream =
+    null;
+
+  let mmFacing =
+    "environment";
+
+
+  window.openCamera =
+    async function () {
+
+      try {
+
+        const camera =
+          $("mmCamera");
+
+        const video =
+          $("mmVideo");
+
+
+        if (!camera || !video) {
+          return;
+        }
+
+
+        mmStream =
+          await navigator.mediaDevices
+            .getUserMedia({
+
+              video: {
+
+                facingMode: {
+                  ideal:
+                    mmFacing
+                },
+
+                width: {
+                  ideal: 1920
+                },
+
+                height: {
+                  ideal: 1080
+                }
+
+              },
+
+              audio: false
+
+            });
+
+
+        video.srcObject =
+          mmStream;
+
+
+        camera.classList.add(
+          "show"
+        );
+
+
+      } catch (error) {
+
+        console.error(error);
+
+
+        alert(
+          "📷 Kameran kunde inte öppnas. Kontrollera kameratillåtelsen i Safari."
+        );
+
+      }
+
+    };
+
+
+  window.closeCamera =
+    function () {
+
+      if (mmStream) {
+
+        mmStream
+          .getTracks()
+          .forEach(
+            track =>
+              track.stop()
+          );
+
+        mmStream =
+          null;
+
+      }
+
+
+      $("mmCamera")
+        ?.classList
+        .remove("show");
+
+    };
+
+
+  /* -------------------------------------------------------
+     Byt kamera
+     ------------------------------------------------------- */
+
+  window.flipCamera =
+    async function () {
+
+      mmFacing =
+        mmFacing ===
+          "environment"
+          ? "user"
+          : "environment";
+
+
+      if (mmStream) {
+
+        mmStream
+          .getTracks()
+          .forEach(
+            track =>
+              track.stop()
+          );
+
+        mmStream =
+          null;
+
+      }
+
+
+      try {
+
+        const video =
+          $("mmVideo");
+
+
+        mmStream =
+          await navigator.mediaDevices
+            .getUserMedia({
+
+              video: {
+
+                facingMode:
+                  mmFacing,
+
+                width: {
+                  ideal: 1920
+                },
+
+                height: {
+                  ideal: 1080
+                }
+
+              },
+
+              audio: false
+
+            });
+
+
+        video.srcObject =
+          mmStream;
+
+
+      } catch (error) {
+
+        console.error(error);
+
+
+        alert(
+          "📷 Kunde inte byta kamera."
+        );
+
+      }
+
+    };
+
+
+  /* -------------------------------------------------------
+     Ta foto från kameran
+     ------------------------------------------------------- */
+
+  window.takeCameraPhoto =
+    async function () {
+
+      const video =
+        $("mmVideo");
+
+      const canvas =
+        $("mmCanvas");
+
+
+      if (
+        !video ||
+        !canvas ||
+        !video.videoWidth
+      ) {
+
+        return;
+
+      }
+
+
+      canvas.width =
+        video.videoWidth;
+
+      canvas.height =
+        video.videoHeight;
+
+
+      const ctx =
+        canvas.getContext("2d");
+
+
+      ctx.drawImage(
+        video,
+        0,
+        0
+      );
+
+
+      const blob =
+        await new Promise(
+          resolve =>
+            canvas.toBlob(
+              resolve,
+              "image/jpeg",
+              0.88
+            )
+        );
+
+
+      if (!blob) {
+        return;
+      }
+
+
+      closeCamera();
+
+
+      openEditor(
+        blob,
+        edited => {
+
+          const file =
+            new File(
+              [edited],
+              "monstera-" +
+                Date.now() +
+                ".jpg",
+              {
+                type:
+                  "image/jpeg"
+              }
+            );
+
+
+          showCameraPreview(
+            file
+          );
+
+        }
+      );
+
+
+      const p =
+        await one(
+          PS,
+          current
+        );
+
+
+      if (!p) return;
+
+
+      const images =
+        (
+          await imgs(current)
+        ).sort(
+          (a, b) =>
+            new Date(
+              a.createdAt
+            ) -
+            new Date(
+              b.createdAt
+            )
+        );
+
+
+      const previous =
+        images[
+          images.length - 1
+        ];
+
+
+      const measurements =
+        previous?.measurements ||
+        {};
+
+
+      const area =
+        $("statsArea");
+
+
+      if (!area) return;
+
+
+      area.innerHTML = `
+
+        <h2 class="timelineTitle">
+          📸 Kameradokumentation
+        </h2>
+
+        <div class="card">
+
+          <img
+            src="${URL.createObjectURL(blob)}"
+            style="
+              width:100%;
+              border-radius:16px
+            "
+          >
+
+          <div class="infoRow">
+
+            <span>🌿 Planta</span>
+
+            <b>
+              ${esc(p.name)}
+            </b>
+
+          </div>
+
+          <div class="infoRow">
+
+            <span>🎂 Ålder</span>
+
+            <b>
+              Dag ${ageDays(
+                p.originDate,
+                new Date()
+              )}
+            </b>
+
+          </div>
+
+          <button
+            class="save"
+            style="
+              width:100%;
+              margin-top:10px
+            "
+            onclick="
+              saveCameraDoc(
+                window.mmCameraFile
+              )
+            "
+          >
+            💾 Spara bilden
+          </button>
+
+        </div>
+
+      `;
+
+
+      window.mmCameraFile = {
+
+        file,
+
+        prev:
+          measurements
+
+      };
+
+
+      area.scrollIntoView({
+        behavior:
+          "smooth",
+
+        block:
+          "start"
+
+      });
+
+    };
+
+
+  /* -------------------------------------------------------
+     Spara kameradokumentation
+     ------------------------------------------------------- */
+
+  window.saveCameraDoc =
+    async function (data) {
+
+      if (!data) return;
+
+
+      const blob =
+        await optimizeImage(
+          data.file
+        );
+
+
+      const record = {
+
+        plantId:
+          current,
+
+        createdAt:
+          new Date()
+            .toISOString(),
+
+        measurements:
+          data.prev || {},
+
+        note:
+          "",
+
+        tag:
+          "normal",
+
+        blob
+
+      };
+
+
+      await put(
+        IS,
+        record
+      );
+
+
+      await renderDetail();
+      await renderHome();
+      await renderDashboard();
+
+
+      alert(
+        "✅ Kamerabilden är sparad."
+      );
+
+    };
+
+
+  /* -------------------------------------------------------
+     Escape stänger sheets
+     ------------------------------------------------------- */
+
+  document.addEventListener(
+    "keydown",
+    event => {
+
+      if (
+        event.key !==
+        "Escape"
+      ) {
+
+        return;
+
+      }
+
+
+      closeAddPlantSheet();
+      closePlantTools();
+      closeCamera();
+
+    }
   );
 
-  $("saveDoc").onclick=async()=>{
-
-    const m={};
-
-    for(
-      const [id2,k]
-      of [
-        ["mh","height"],
-        ["ml","leaves"],
-        ["mr","roots"],
-        ["mv","variegation"]
-      ]
-    ){
-
-      const v=Number(
-        $(id2).value
-      );
-
-      if(Number.isFinite(v))
-        m[k]=v;
-
-    }
-
-    await put(
-      IS,
-      {
-        id:crypto.randomUUID(),
-        plantId:id,
-        createdAt:new Date().toISOString(),
-        blob:await optimizeImage(f),
-        measurements:m,
-        note:$("mn").value
-      }
-    );
-
-    closeModal();
-
-    await renderHome();
-
-    await renderDashboard();
-
-    openDetail(id);
-
-  };
-
-}
-
-async function showGrowth(id){
-
-  const p=await one(PS,id);
-
-  const a=await imgs(id);
-
-  const c=[
-    "height",
-    "leaves",
-    "roots"
-  ]
-  .map(k=>{
-
-    const v=a
-      .map(
-        x=>Number(
-          x.measurements?.[k]
-        )
-      )
-      .filter(Number.isFinite);
-
-    return `
-<div class="measure">
-
-  <small>${k}</small>
-
-  <b>
-    ${
-      v.length>1
-      ?(
-        v.at(-1)-v[0]>=0
-        ?"+"
-        :""
-      )+
-      (v.at(-1)-v[0]).toFixed(1)
-      :"—"
-    }
-  </b>
-
-</div>
-`;
-
-  })
-  .join("");
-
-  $("statsArea").innerHTML=`
-
-<div class="card">
-
-  <h2>
-    📈 Tillväxt — ${esc(p.name)}
-  </h2>
-
-  <div class="measureGrid">
-    ${c}
-  </div>
-
-  <button
-    class="small-btn"
-    onclick="openDetail('${id}')"
-  >
-    ← Tillbaka
-  </button>
-
-</div>
-
-`;
-
-}
-
-async function showForecast(id){
-
-  const p=await one(PS,id);
-
-  const a=(await imgs(id))
-    .sort(
-      (x,y)=>
-        new Date(x.createdAt)-
-        new Date(y.createdAt)
-    );
-
-  const calc=k=>{
-
-    const x=a
-      .map(z=>({
-        d:new Date(z.createdAt),
-        v:Number(
-          z.measurements?.[k]
-        )
-      }))
-      .filter(
-        z=>Number.isFinite(z.v)
-      );
-
-    if(x.length<2)
-      return "—";
-
-    const days=Math.max(
-      1,
-      (x.at(-1).d-x[0].d)/
-      86400000
-    );
-
-    const rate=
-      (x.at(-1).v-x[0].v)/
-      days;
-
-    return (
-      x.at(-1).v+
-      rate*30
-    ).toFixed(1);
-
-  };
-
-  $("statsArea").innerHTML=`
-
-<div class="card">
-
-  <h2>
-    🔮 Prognos — ${esc(p.name)}
-  </h2>
-
-  <div class="measureGrid">
-
-    <div class="measure">
-      <small>Höjd om 30 dagar</small>
-      <b>${calc("height")} cm</b>
-    </div>
-
-    <div class="measure">
-      <small>Blad om 30 dagar</small>
-      <b>${calc("leaves")}</b>
-    </div>
-
-  </div>
-
-  <p class="muted">
-    Matematisk uppskattning, inte en garanti.
-  </p>
-
-  <button
-    class="small-btn"
-    onclick="openDetail('${id}')"
-  >
-    ← Tillbaka
-  </button>
-
-</div>
-
-`;
-
-}
-
-async function showRecords(id){
-
-  const p=await one(PS,id);
-
-  const a=await imgs(id);
-
-  const keys=[
-    ["height","Högsta höjd","cm"],
-    ["leaves","Flest blad","st"],
-    ["roots","Flest rötter","st"],
-    ["variegation","Högsta variegering","%"]
-  ];
-
-  $("statsArea").innerHTML=`
-
-<div class="card">
-
-  <h2>
-    🏆 Rekord — ${esc(p.name)}
-  </h2>
-
-  ${
-    keys.map(
-      ([k,l,u])=>{
-
-        const v=a
-          .map(
-            x=>Number(
-              x.measurements?.[k]
-            )
-          )
-          .filter(Number.isFinite);
-
-        return `
-<div class="infoRow">
-
-  <span>${l}</span>
-
-  <b>
-    ${v.length?Math.max(...v):"—"}
-    ${v.length?u:""}
-  </b>
-
-</div>
-`;
-
-      }
-    ).join("")
-  }
-
-  <button
-    class="small-btn"
-    onclick="openDetail('${id}')"
-  >
-    ← Tillbaka
-  </button>
-
-</div>
-
-`;
-
-}
+})();
