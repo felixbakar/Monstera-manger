@@ -1,6 +1,12 @@
-const BVER="2.0";
+/* =========================================================
+   MONSTERA MANAGER
+   backup.js
+   Backup / restore / kompatibilitet
+   ========================================================= */
 
-const BST=[
+window.MM_BACKUP_VERSION = "1.7";
+
+window.MM_BACKUP_STORES = [
   PS,
   IS,
   "envLogs",
@@ -12,234 +18,728 @@ const BST=[
   "events"
 ];
 
-async function b64(b){
 
-  if(!b)
-    return null;
+/* ---------------------------------------------------------
+   Blob → Base64
+   --------------------------------------------------------- */
 
-  const a=new Uint8Array(
-    await b.arrayBuffer()
-  );
+async function blobToBase64(blob) {
 
-  let s="";
+  if (!blob) return null;
 
-  for(
-    let i=0;
-    i<a.length;
-    i+=32768
-  ){
+  const buffer =
+    await blob.arrayBuffer();
 
-    s+=String.fromCharCode(
-      ...a.subarray(
+  const bytes =
+    new Uint8Array(buffer);
+
+  let binary = "";
+
+  for (
+    let i = 0;
+    i < bytes.length;
+    i += 0x8000
+  ) {
+
+    binary += String.fromCharCode(
+      ...bytes.subarray(
         i,
-        i+32768
+        i + 0x8000
       )
     );
 
   }
 
-  return btoa(s);
+  return btoa(binary);
 
 }
 
-function blob(s,t){
 
-  const a=atob(s);
+/* ---------------------------------------------------------
+   Base64 → Blob
+   --------------------------------------------------------- */
 
-  const u=new Uint8Array(
-    a.length
-  );
+function base64ToBlob(
+  base64,
+  type = "application/octet-stream"
+) {
 
-  for(
-    let i=0;
-    i<a.length;
+  const binary =
+    atob(base64);
+
+  const bytes =
+    new Uint8Array(
+      binary.length
+    );
+
+  for (
+    let i = 0;
+    i < binary.length;
     i++
-  )
-    u[i]=a.charCodeAt(i);
+  ) {
+
+    bytes[i] =
+      binary.charCodeAt(i);
+
+  }
 
   return new Blob(
-    [u],
-    {type:t}
+    [bytes],
+    { type }
   );
 
 }
 
-async function makeBackup(){
 
-  const data={};
+/* ---------------------------------------------------------
+   Skapa komplett backup
+   --------------------------------------------------------- */
 
-  for(
-    const s of BST
-  )
-    data[s]=await all(s);
+window.MM_makeBackupPayload =
+  async function () {
 
-  data[IS]=
-    await Promise.all(
-      data[IS].map(
-        async x=>{
+    const payload = {
 
-          const y={...x};
+      app: "Monstera Manager",
 
-          if(y.blob){
+      version:
+        MM_BACKUP_VERSION,
 
-            y.blobBase64=
-              await b64(y.blob);
+      createdAt:
+        new Date().toISOString(),
 
-            y.blobType=
-              y.blob.type;
+      data: {}
 
-            delete y.blob;
+    };
 
-          }
 
-          return y;
+    /* Hämta alla datastores */
 
-        }
-      )
-    );
+    for (
+      const name
+      of MM_BACKUP_STORES
+    ) {
 
-  return{
-    app:"Monstera Manager",
-    version:BVER,
-    createdAt:
-      new Date().toISOString(),
-    data
-  };
+      payload.data[name] =
+        await all(name);
 
-}
+    }
 
-function valid(x){
 
-  return !!x &&
-    x.app==="Monstera Manager" &&
-    x.data &&
-    Array.isArray(
-      x.data.plants
-    ) &&
-    Array.isArray(
-      x.data.images
-    );
+    /* Bilder måste konverteras
+       eftersom IndexedDB lagrar
+       dem som Blob */
 
-}
+    payload.data[IS] =
+      await Promise.all(
 
-async function exportBackup(){
+        payload.data[IS].map(
+          async image => {
 
-  const x=
-    await makeBackup();
+            const copy =
+              { ...image };
 
-  const a=
-    document.createElement("a");
 
-  a.href=
-    URL.createObjectURL(
-      new Blob(
-        [JSON.stringify(x)],
-        {
-          type:"application/json"
-        }
-      )
-    );
+            if (
+              copy.blob
+              instanceof Blob
+            ) {
 
-  a.download=
-    "monstera-manager-backup.json";
-
-  a.click();
-
-}
-
-function importBackup(){
-
-  const i=$("backupInput");
-
-  i.value="";
-
-  i.onchange=
-    async()=>{
-
-      try{
-
-        const x=
-          JSON.parse(
-            await i.files[0].text()
-          );
-
-        if(!valid(x))
-          throw Error(
-            "Ogiltig backup"
-          );
-
-        if(
-          !confirm(
-            "Återställa backup? Nuvarande data ersätts."
-          )
-        )
-          return;
-
-        for(
-          const s of BST
-        ){
-
-          for(
-            const r
-            of await all(s)
-          )
-            await del(
-              s,
-              r.id
-            );
-
-          for(
-            const r0
-            of x.data[s]||[]
-          ){
-
-            const r={
-              ...r0
-            };
-
-            if(
-              s===IS &&
-              r.blobBase64
-            ){
-
-              r.blob=
-                blob(
-                  r.blobBase64,
-                  r.blobType||
-                  "image/jpeg"
+              copy.blobBase64 =
+                await blobToBase64(
+                  copy.blob
                 );
 
-              delete r.blobBase64;
+              copy.blobType =
+                copy.blob.type ||
+                "image/jpeg";
+
+              delete copy.blob;
 
             }
 
-            await put(
-              s,
-              r
-            );
+
+            return copy;
 
           }
+        )
+
+      );
+
+
+    return payload;
+
+  };
+
+
+/* ---------------------------------------------------------
+   Kontrollera backup
+   --------------------------------------------------------- */
+
+window.MM_validateBackup =
+  function (data) {
+
+    if (
+      !data ||
+      data.app !==
+        "Monstera Manager" ||
+      !data.data ||
+      !Array.isArray(
+        data.data[PS]
+      ) ||
+      !Array.isArray(
+        data.data[IS]
+      )
+    ) {
+
+      return false;
+
+    }
+
+
+    /*
+      Äldre backups kan sakna
+      datastores som introducerats
+      senare.
+    */
+
+    for (
+      const name
+      of MM_BACKUP_STORES
+    ) {
+
+      if (
+        data.data[name] !==
+          undefined &&
+        !Array.isArray(
+          data.data[name]
+        )
+      ) {
+
+        return false;
+
+      }
+
+    }
+
+
+    return true;
+
+  };
+
+
+/* ---------------------------------------------------------
+   Återställ backup
+   --------------------------------------------------------- */
+
+window.MM_restoreBackup =
+  async function (data) {
+
+    if (
+      !MM_validateBackup(data)
+    ) {
+
+      throw new Error(
+        "Ogiltig backup"
+      );
+
+    }
+
+
+    /*
+      Restore = ersätt databasen.
+      Vi mergar alltså inte gammal
+      och ny data.
+    */
+
+    for (
+      const name
+      of MM_BACKUP_STORES
+    ) {
+
+      const rows =
+        Array.isArray(
+          data.data[name]
+        )
+          ? data.data[name]
+          : [];
+
+
+      /* Radera befintlig data */
+
+      const existing =
+        await all(name);
+
+
+      for (
+        const row
+        of existing
+      ) {
+
+        await del(
+          name,
+          row.id
+        );
+
+      }
+
+
+      /* Lägg tillbaka backupdata */
+
+      for (
+        const row
+        of rows
+      ) {
+
+        const copy =
+          { ...row };
+
+
+        /* Återskapa bild-Blob */
+
+        if (
+          name === IS &&
+          copy.blobBase64
+        ) {
+
+          copy.blob =
+            base64ToBlob(
+              copy.blobBase64,
+              copy.blobType ||
+                "image/jpeg"
+            );
+
+          delete copy.blobBase64;
+          delete copy.blobType;
 
         }
 
-        await renderHome();
 
-        await renderDashboard();
-
-        alert(
-          "✅ Backup återställd"
+        await put(
+          name,
+          copy
         );
 
-      }catch(e){
+      }
+
+    }
+
+  };
+
+
+/* ---------------------------------------------------------
+   Exportera backup till JSON-fil
+   --------------------------------------------------------- */
+
+async function exportBackup() {
+
+  try {
+
+    const payload =
+      await MM_makeBackupPayload();
+
+
+    const blob =
+      new Blob(
+        [
+          JSON.stringify(
+            payload
+          )
+        ],
+        {
+          type:
+            "application/json"
+        }
+      );
+
+
+    const url =
+      URL.createObjectURL(
+        blob
+      );
+
+
+    const link =
+      document.createElement(
+        "a"
+      );
+
+    link.href = url;
+
+    link.download =
+      `monstera-manager-backup-${new Date()
+        .toISOString()
+        .slice(0, 10)}.json`;
+
+
+    link.click();
+
+
+    setTimeout(
+      () => URL.revokeObjectURL(url),
+      1000
+    );
+
+
+    alert(
+      "✅ Komplett backup exporterad."
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "❌ Kunde inte exportera backupen."
+    );
+
+  }
+
+}
+
+
+/* ---------------------------------------------------------
+   Importera backup
+   --------------------------------------------------------- */
+
+function setupBackupImport() {
+
+  const input =
+    $("backupInput");
+
+
+  if (!input) return;
+
+
+  input.onchange =
+    async event => {
+
+      const file =
+        event.target.files[0];
+
+
+      if (!file) return;
+
+
+      try {
+
+        const data =
+          JSON.parse(
+            await file.text()
+          );
+
+
+        if (
+          !MM_validateBackup(
+            data
+          )
+        ) {
+
+          throw new Error(
+            "Ogiltig backup"
+          );
+
+        }
+
+
+        const plantCount =
+          data.data[PS].length;
+
+
+        const imageCount =
+          data.data[IS].length;
+
+
+        const confirmed =
+          confirm(
+            `Importera komplett backup?\n\n` +
+            `${plantCount} plantor\n` +
+            `${imageCount} bilder\n\n` +
+            `Nuvarande data kommer att ersättas.`
+          );
+
+
+        if (!confirmed) {
+
+          input.value = "";
+
+          return;
+
+        }
+
+
+        await MM_restoreBackup(
+          data
+        );
+
+
+        /*
+          Uppdatera gränssnittet
+          efter restore.
+        */
+
+        if (
+          typeof renderHome ===
+          "function"
+        ) {
+
+          await renderHome();
+
+        }
+
+
+        if (
+          typeof renderDashboard ===
+          "function"
+        ) {
+
+          await renderDashboard();
+
+        }
+
+
+        if (
+          typeof renderReminderSummary ===
+          "function"
+        ) {
+
+          await renderReminderSummary();
+
+        }
+
 
         alert(
-          "❌ "+e.message
+          "✅ Komplett backup importerad."
+        );
+
+
+      } catch (error) {
+
+        console.error(error);
+
+        alert(
+          "❌ Kunde inte importera backupen.\n\n" +
+          "Kontrollera att filen kommer från Monstera Manager."
+        );
+
+      }
+
+
+      input.value = "";
+
+    };
+
+}
+
+
+/* ---------------------------------------------------------
+   Kontrollera backupfil
+   --------------------------------------------------------- */
+
+async function verifyBackupFile() {
+
+  const input =
+    document.createElement(
+      "input"
+    );
+
+
+  input.type = "file";
+
+  input.accept =
+    ".json,application/json";
+
+
+  input.onchange =
+    async () => {
+
+      const file =
+        input.files[0];
+
+
+      if (!file) return;
+
+
+      try {
+
+        const data =
+          JSON.parse(
+            await file.text()
+          );
+
+
+        if (
+          MM_validateBackup(
+            data
+          )
+        ) {
+
+          const d =
+            data.data;
+
+
+          const environmentLogs =
+            (
+              d.envLogs || []
+            ).length +
+            (
+              d.tempLogs || []
+            ).length +
+            (
+              d.humidityLogs || []
+            ).length +
+            (
+              d.lightLogs || []
+            ).length;
+
+
+          alert(
+            `✅ Backup OK\n\n` +
+            `Version: ${data.version || "äldre"}\n` +
+            `Plantor: ${d.plants.length}\n` +
+            `Bilder: ${d.images.length}\n` +
+            `Miljöloggar: ${environmentLogs}\n` +
+            `Händelser: ${(d.events || []).length}`
+          );
+
+        } else {
+
+          alert(
+            "❌ Filen ser inte ut som en giltig Monstera Manager-backup."
+          );
+
+        }
+
+
+      } catch (error) {
+
+        console.error(error);
+
+        alert(
+          "❌ Kunde inte läsa backupfilen."
         );
 
       }
 
     };
 
-  i.click();
+
+  input.click();
+
+}
+
+
+/* ---------------------------------------------------------
+   Äldre backup-kompatibilitet
+   --------------------------------------------------------- */
+
+async function runLegacyBackupCompatibilityTest() {
+
+  const legacy = {
+
+    app:
+      "Monstera Manager",
+
+    version:
+      "1.5",
+
+    createdAt:
+      new Date().toISOString(),
+
+    data: {
+
+      plants: [],
+
+      images: []
+
+    }
+
+  };
+
+
+  const valid =
+    MM_validateBackup(
+      legacy
+    );
+
+
+  const area =
+    $("statsArea");
+
+
+  if (!area) return;
+
+
+  area.innerHTML = `
+
+    <h2 class="timelineTitle">
+      🧪 Äldre backup-kompatibilitet
+    </h2>
+
+    <div class="card">
+
+      <div class="mm-dbtest-row">
+
+        <span>
+          V1.5-liknande backup utan nya stores
+        </span>
+
+        <span class="${
+          valid
+            ? "mm-dbtest-ok"
+            : "mm-dbtest-bad"
+        }">
+
+          ${
+            valid
+              ? "✅ PASS"
+              : "❌ FAIL"
+          }
+
+        </span>
+
+      </div>
+
+
+      <div class="mm-dbtest-note">
+
+        ${
+          valid
+            ? "Äldre backups accepteras och saknade nya datastores behandlas som tomma."
+            : "Äldre backups avvisas fortfarande."
+        }
+
+      </div>
+
+    </div>
+
+  `;
+
+
+  area.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+
+}
+
+
+/* ---------------------------------------------------------
+   Initiera backup-input
+   --------------------------------------------------------- */
+
+if (
+  document.readyState ===
+  "loading"
+) {
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    setupBackupImport
+  );
+
+} else {
+
+  setupBackupImport();
 
 }
