@@ -1,0 +1,29 @@
+:root{--g:#1f5c3a;--bg:#eef2e6;--c:#fbfcf7;--t:#14281d;--l:#c9d6b8;--w:#2b6f9e}
+@media(prefers-color-scheme:dark){:root{--g:#5fae83;--bg:#101a14;--c:#18261e;--t:#e4eee6;--l:#2c4033;--w:#7bb6de}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;font:16px/1.4 system-ui,sans-serif;background:var(--bg);color:var(--t)}
+header{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:6px;padding:12px 14px;background:var(--bg);border-bottom:1px solid var(--l)}
+h1{font:600 22px Georgia,serif;margin:0}
+h2{font:600 17px Georgia,serif;margin:0 0 8px}
+header button{background:none;color:var(--t);font-size:28px;padding:0 8px;margin:0}
+main{max-width:560px;margin:auto;padding:12px 12px 100px}
+.card{display:flex;gap:12px;align-items:center;background:var(--c);border:1px solid var(--l);border-radius:12px;padding:10px;margin-bottom:8px}
+.card.sub{margin-left:24px;border-left:5px solid var(--g)}
+.card img,.ph{width:56px;height:56px;border-radius:8px;object-fit:cover;background:var(--l);display:grid;place-items:center;font-size:26px}
+small{display:block;opacity:.7}
+.b{display:inline-block;font-size:13px;color:var(--w);border:1px solid var(--w);border-radius:20px;padding:1px 9px;margin-top:3px}
+.b.red{color:#fff;background:#b3372b;border-color:#b3372b}
+.fab{position:fixed;right:18px;bottom:18px;width:60px;height:60px;border-radius:50%;font-size:34px;padding:0;margin:0}
+label{display:block;margin:10px 0 4px;font-size:14px}
+input,select,textarea{width:100%;padding:11px;border-radius:8px;border:1px solid var(--g);font:inherit;background:var(--c);color:var(--t)}
+button,.btn{display:inline-block;background:var(--g);color:var(--bg);border:0;border-radius:8px;padding:11px 14px;font:inherit;margin:8px 6px 0 0}
+button.alt,.btn.alt{background:none;color:var(--t);border:1px solid var(--g)}
+button.del{background:#b3372b;color:#fff}
+.sec{background:var(--c);border:1px solid var(--l);border-radius:12px;padding:12px;margin-bottom:10px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.grid img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px}
+.row{display:flex;gap:8px}
+.empty{text-align:center;opacity:.7;margin-top:48px}
+a{color:var(--g)}
+svg{width:100%;height:auto}
