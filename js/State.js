@@ -8,7 +8,8 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '
 
 // Sätter rubrik, visar/döljer bakåtknapp och +-knapp
 function nav(title, back) {
-  $('#t').textContent = title;
+  $('header').hidden = !back;
   $('#back').hidden = !back;
-  $('.fab').hidden = back;
+  $('#t').textContent = title;
 }
+
